@@ -1,17 +1,17 @@
-import FrameConsumer
-import FrameProducer
+import frame_consumer
+import frame_producer
 import queue
 
 if __name__ == "__main__":
     print("Start!")
 
     video_file_name = 'Videos/sample.avi'
-    queue_frame = queue.Queue(100)
 
-    producer = FrameProducer.FrameProducer(video_file_name, queue_frame)
+    consumer = frame_consumer.FrameConsumer()
+
+    producer = frame_producer.FrameProducer(video_file_name, consumer)
     producer.start()
 
-    consumer = FrameConsumer.FrameConsumer(queue_frame)
     consumer.start()
 
     producer.join()
