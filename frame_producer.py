@@ -22,10 +22,8 @@ class FrameProducer(threading.Thread):
             if ret is True:
                 print('push!')
 
-                frame = cv2.resize(frame, (1280, 720))
-
+                #frame = cv2.resize(frame, (1280, 720))
                 self._consumer.push(frame, True)
-                time.sleep(0.01)
             else:
                 break
 

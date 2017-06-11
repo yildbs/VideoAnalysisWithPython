@@ -2,7 +2,7 @@ import cv2
 import threading
 import numpy as np
 import queue
-import time
+import frame_viewer
 import frame_buffer
 
 
@@ -79,16 +79,20 @@ class FrameConsumer(threading.Thread):
         self._enabled = True
         #self._diff = DifferentiateFrame()
         self._current_count = 0
-        self._reference_rects = []
-        self._next_reference_rects = []
 
         self._finder = FindPedestrian(self._frame_buffer, self._rects_output)
         self._finder.start()
+
+        self._viewer_frame = frame_viewer.FrameViewer()
+        self._viewer_frame.set_interval(30)
+        self._viewer_frame.start()
 
     def run(self):
         count_updated = 0
         count_consume = 0
         finder_image_index = 0
+        reference_rects = []
+        next_reference_rects = []
         while self._enabled is True:
             data = self._frame_buffer.pop_front()
             count_consume, frame = data[0], data[1]
@@ -96,20 +100,19 @@ class FrameConsumer(threading.Thread):
             while count_consume >= finder_image_index:
                 data = self._rects_output.get(block=True)
                 finder_image_index, rects = data[0], data[1]
-                self._reference_rects = self._next_reference_rects
-                self._next_reference_rects = rects
+                reference_rects = next_reference_rects
+                next_reference_rects = rects
                 count_updated = 0
 
             line_width = 20 - count_updated
             if line_width <= 2:
                 line_width = 2
 
-            print(count_consume, len(self._reference_rects))
-            for (x, y, w, h) in self._reference_rects:
+            print(count_consume, len(reference_rects))
+            for (x, y, w, h) in reference_rects:
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), line_width)
 
-            cv2.imshow('frame', frame)
-            cv2.waitKey(30)
+            self._viewer_frame.push_frame(frame)
 
             count_updated = count_updated + 1
             print('count_updated : ', count_updated)
@@ -133,8 +136,6 @@ class FindPedestrian(threading.Thread):
 
     def set_enabled(self, enabled):
         self._enabled = enabled
-
-
 
     def run(self):
         while self._enabled is True:
