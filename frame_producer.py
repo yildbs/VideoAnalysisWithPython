@@ -13,12 +13,19 @@ class FrameProducer(threading.Thread):
     def run(self):
         capture = cv2.VideoCapture(self._file_name)
 
+        frame_count = 0
         while True:
             ret, frame = capture.read()
+            frame_count = frame_count + 1
+            #if frame_count < 2000:
+                #continue
             if ret is True:
                 print('push!')
+
+                frame = cv2.resize(frame, (1280, 720))
+
                 self._consumer.push(frame, True)
-                time.sleep(0.03)
+                time.sleep(0.01)
             else:
                 break
 
