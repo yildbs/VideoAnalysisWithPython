@@ -8,7 +8,7 @@ class FrameViewer(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self._frame_buffer = queue.Queue(100)
-        self._interval = 30 # ms
+        self._interval = 33 # ms
         self._enabled = True
 
     def set_interval(self, interval):
@@ -27,12 +27,14 @@ class FrameViewer(threading.Thread):
     def run(self):
         while self._enabled is True:
             start_time = time.time()
-            frame = self._frame_buffer.get(block=True)
-            elapsed_time = time.time() - start_time
-            delay_time = int(self._interval - elapsed_time * 1000)
-            if delay_time <= 1:
-                delay_time = 1
-            cv2.imshow('frame', frame)
-            print('delay_time', delay_time, elapsed_time)
-            cv2.waitKey(delay_time)
 
+            frame = self._frame_buffer.get(block=True)
+
+            cv2.imshow('frame', frame)
+            cv2.waitKey(1)
+
+            elapsed_time = time.time() - start_time
+            delay_time = 1 / 30 - elapsed_time
+            if delay_time > 0:
+                time.sleep(1 / 30)
+            print('delay_time', delay_time * 1000, elapsed_time * 1000)
