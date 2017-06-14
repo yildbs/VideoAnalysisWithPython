@@ -5,6 +5,7 @@ import queue
 import frame_viewer
 import frame_buffer
 import object_list
+import cnn_for_human_detection
 
 
 class BackgroundFrame():
@@ -90,6 +91,9 @@ class FrameConsumer(threading.Thread):
         self._object_list = object_list.ObjectList()
 
     def run(self):
+        cnn = cnn_for_human_detection.CnnForHumanDetection()
+        cnn.initialize([128, 128, 1])
+
         count_updated = 0
         count_consume = 0
         finder_image_index = 0
@@ -98,6 +102,7 @@ class FrameConsumer(threading.Thread):
         while self._enabled is True:
             data = self._frame_buffer.pop_front()
             count_consume, frame = data[0], data[1]
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
             print('count_consume : ', count_consume)
 
@@ -113,12 +118,22 @@ class FrameConsumer(threading.Thread):
                 refined_rects.append([x, y, x+w, y+h])
 
             self._object_list.push(count_consume, refined_rects)
+            object_list = self._object_list.get_object_list()
+            for obj in object_list:
+                print('')
+                x, y, x2, y2 = obj.get_rect()
+                roi = gray[x:x2, y:y2]
+                #roi = frame(obj.get_rect())
+
+                cnn.predict(roi)
+
+
 
             line_width = 20 - count_updated
             if line_width <= 2:
                 line_width = 2
 
-            type_rects, distances = self._object_list.get_rects_with_type()
+            type_rects, distances, scores = self._object_list.get_rects_with_type()
 
             index = 0
             for type_rect in type_rects:
@@ -127,15 +142,12 @@ class FrameConsumer(threading.Thread):
                 (x, y, x2, y2) = rect
                 color = []
                 if type == object_list.ObjectList.ObjectType.HUMAN:
-                    color = (255, 0, 0)
+                    color = (255, 255, 255)
                 elif type == object_list.ObjectList.ObjectType.ETC:
                     color = (0, 255, 0)
                 cv2.rectangle(frame, (x, y), (x2, y2), color, line_width)
-                cv2.putText(frame, str(index)+'.'+str(int(distances[index])), (x, y), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 1.0, color, 5)
+                cv2.putText(frame, str(index) + ':' + str(int(distances[index])) + ':' + str(int(scores[index])), (x, y), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 1.0, color, 5)
                 index = index + 1
-
-            #for (x, y, w, h) in reference_rects:
-            #    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), line_width)
 
             self._viewer_frame.push_frame(frame)
 

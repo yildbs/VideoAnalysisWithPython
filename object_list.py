@@ -13,6 +13,7 @@ def get_distance_rects(rect1, rect2):
 
     temp = dist_1 + dist_2
 
+    # TODO Delete the Test Code
     if 0 < temp and temp < 50000:
         print('here')
 
@@ -31,7 +32,9 @@ class Object:
         self._is_human = False
         self._updated = False
 
+        # TODO Delete the Test Code
         self.test_distance = 0
+        self.test_score = 0
 
     def is_in(self, rect, distance):
         if get_distance_rects(rect, self._rect_latest) < distance:
@@ -44,13 +47,14 @@ class Object:
     def get_rect(self):
         return self._rect_latest
 
-    def push(self, frame_count, rect):
+    def update(self, frame_count, rect):
         self._frame_count_advent = self._frame_count_advent + 1
 
+        # TODO Delete the Test Code
         if get_distance_rects(self._rect_latest, rect) != 0:
             self.test_distance = get_distance_rects(self._rect_latest, rect)
 
-        if get_distance_rects(self._rect_latest, rect) < 1000:
+        if get_distance_rects(self._rect_latest, rect) < 10:
             self._frame_count_not_move = self._frame_count_not_move + 1
         else:
             self._frame_count_not_move = 0
@@ -70,6 +74,10 @@ class Object:
         score_not_move = self._frame_count_not_move / self._frame_count_advent * -1
         score_as_human = self._frame_count_as_human / self._frame_count_advent
         score = score_not_move*6 + score_as_human*4
+
+        # TODO Delete the Test Code
+        self.test_score = score
+
         if score >= 0:
             self._is_human = True
             return True
@@ -87,7 +95,7 @@ class ObjectList:
         self._object_list = []
         self._frame_width = 0
         self._frame_height = 0
-        self._distance_for_same_object = 100000
+        self._distance_for_same_object = 500
 
     def push(self, frame_count, rects):
         for rect in rects:
@@ -103,12 +111,18 @@ class ObjectList:
                 self._object_list.append(Object(frame_count, rect))
             elif len(close_list) == 1:
                 for obj in close_list:
-                    obj.push(frame_count, rect)
+                    obj.update(frame_count, rect)
             else:
                 #TODO
-                for obj in close_list:
-                    print('TODO: len(close_list) is over 2 or same')
-                    #raise Enum
+                for close_obj in close_list:
+                    for obj in self._object_list:
+                        if close_obj is obj:
+                            self._object_list.remove(obj)
+                new_obj = Object(frame_count, rect)
+                self._object_list.append(new_obj)
+
+    def get_object_list(self):
+        return self._object_list
 
     def get_rects_with_type(self):
         rects = []
@@ -118,11 +132,14 @@ class ObjectList:
             else:
                 rects.append([self.ObjectType.ETC, obj.get_rect()])
 
+        # TODO Delete the Test Code
         distances = []
+        scores = []
         for obj in self._object_list:
             distances.append(obj.test_distance)
+            scores.append(obj.test_score)
 
-        return rects, distances
+        return rects, distances, scores
 
     def get_human(self):
         human_list = []

@@ -1,0 +1,6 @@
+deepcnn.py
+cnn_for_human_detection.py
+model*
+ckpt_*
+checkpoint
+ckpt_danusys/*
